@@ -7,13 +7,112 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  NET_BANKING
+  WALLET
+  OTHER
+}
+
 model UserProfile {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  email     String   @unique
-  name      String?
-  imageUrl  String?
+  id       String  @id @default(cuid())
+  clerkId  String  @unique
+  email    String  @unique
+  fullName String?
+  imageUrl String?
+
+  currency String @default("INR")
+  timezone String @default("Asia/Kolkata")
+
+  transactions Transaction[]
+  categories   TransactionCategory[]
+  budgets      Budget[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model TransactionCategory {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name  String
+  icon  String?
+  color String?
+
+  isDefault Boolean @default(false)
+
+  transactions Transaction[]
+
+  budgets Budget[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userProfileId, name])
+  @@index([userProfileId])
+}
+
+model Budget {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id])
+
+  amount Decimal @db.Decimal(10, 2)
+
+  month Int
+
+  year Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([categoryId, month, year])
+  @@index([userProfileId])
+}
+
+model Transaction {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   TransactionCategory @relation(fields: [categoryId], references: [id])
+
+  title String
+
+  description String?
+
+  amount Decimal @db.Decimal(10, 2)
+
+  transactionType TransactionType
+
+  paymentMethod PaymentMethod
+
+  transactionDate DateTime
+
+  receiptUrl String?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+  @@index([categoryId])
+  @@index([transactionDate])
 }
