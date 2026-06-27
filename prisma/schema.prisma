@@ -85,6 +85,21 @@ enum GoalType {
   CUSTOM
 }
 
+enum MuscleGroup {
+  CHEST
+  BACK
+  SHOULDERS
+  BICEPS
+  TRICEPS
+  FOREARMS
+  LEGS
+  CALVES
+  CORE
+  CARDIO
+  FULL_BODY
+  OTHER
+}
+
 model UserProfile {
   id       String  @id @default(cuid())
   clerkId  String  @unique
@@ -133,8 +148,8 @@ model TransactionCategory {
   icon  String?
   color String?
 
-  isDefault Boolean @default(false)
-
+  isDefault    Boolean       @default(false)
+  deletedAt    DateTime?
   transactions Transaction[]
 
   budgets Budget[]
@@ -218,8 +233,8 @@ model Food {
   carbs    Decimal @db.Decimal(10, 2)
   fat      Decimal @db.Decimal(10, 2)
 
-  price Decimal? @db.Decimal(10, 2)
-
+  price     Decimal?   @db.Decimal(10, 2)
+  deletedAt DateTime?
   mealFoods MealFood[]
 
   inventory Inventory?
@@ -353,9 +368,9 @@ model Habit {
 
   frequency HabitFrequency
 
-  target Int @default(1)
-
-  logs HabitLog[]
+  target    Int        @default(1)
+  deletedAt DateTime?
+  logs      HabitLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -386,7 +401,9 @@ model Exercise {
 
   name String
 
-  muscleGroup String?
+  muscleGroup MuscleGroup
+
+  deletedAt DateTime?
 
   workouts WorkoutExercise[]
 
@@ -394,6 +411,7 @@ model Exercise {
   updatedAt DateTime @updatedAt
 
   @@unique([userProfileId, name])
+  @@index([userProfileId])
 }
 
 model Workout {
