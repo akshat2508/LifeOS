@@ -62,6 +62,29 @@ enum ShoppingItemStatus {
   CANCELLED
 }
 
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum GoalStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
+enum GoalType {
+  FITNESS
+  FINANCE
+  HABIT
+  STUDY
+  PERSONAL
+  CUSTOM
+}
+
 model UserProfile {
   id       String  @id @default(cuid())
   clerkId  String  @unique
@@ -84,6 +107,17 @@ model UserProfile {
   // Inventory
   inventories   Inventory[]
   shoppingItems ShoppingItem[]
+
+  // Habits
+  habits Habit[]
+
+  // Fitness
+  workouts   Workout[]
+  exercises  Exercise[]
+  weightLogs WeightLog[]
+
+  // Goals
+  goals Goal[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -305,4 +339,166 @@ model ShoppingItem {
   updatedAt DateTime @updatedAt
 
   @@index([userProfileId])
+}
+
+model Habit {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name String
+
+  description String?
+
+  frequency HabitFrequency
+
+  target Int @default(1)
+
+  logs HabitLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+}
+
+model HabitLog {
+  id String @id @default(cuid())
+
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  completed Boolean
+
+  completedAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([habitId])
+}
+
+model Exercise {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name String
+
+  muscleGroup String?
+
+  workouts WorkoutExercise[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userProfileId, name])
+}
+
+model Workout {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name String
+
+  workoutDate DateTime
+
+  notes String?
+
+  exercises WorkoutExercise[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+  @@index([workoutDate])
+}
+
+model WorkoutExercise {
+  id String @id @default(cuid())
+
+  workoutId String
+  workout   Workout @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+
+  exerciseId String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id])
+
+  sets Int
+
+  reps Int
+
+  weight Decimal? @db.Decimal(10, 2)
+
+  restSeconds Int?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([workoutId])
+  @@index([exerciseId])
+}
+
+model WeightLog {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  weight Decimal @db.Decimal(5, 2)
+
+  loggedAt DateTime
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userProfileId])
+  @@index([loggedAt])
+}
+
+model Goal {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  title String
+
+  description String?
+
+  type GoalType
+
+  status GoalStatus @default(NOT_STARTED)
+
+  targetValue Decimal? @db.Decimal(10, 2)
+
+  currentValue Decimal? @db.Decimal(10, 2)
+
+  deadline DateTime?
+
+  progress GoalProgress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+}
+
+model GoalProgress {
+  id String @id @default(cuid())
+
+  goalId String
+  goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  value Decimal @db.Decimal(10, 2)
+
+  note String?
+
+  createdAt DateTime @default(now())
+
+  @@index([goalId])
 }
