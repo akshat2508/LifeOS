@@ -21,6 +21,47 @@ enum PaymentMethod {
   OTHER
 }
 
+enum MealType {
+  BREAKFAST
+  LUNCH
+  SNACK
+  DINNER
+}
+
+enum Unit {
+  GRAM
+  KILOGRAM
+  MILLILITER
+  LITER
+  PIECE
+  SCOOP
+}
+
+enum FoodCategory {
+  PROTEIN
+  DAIRY
+  FRUIT
+  VEGETABLE
+  GRAIN
+  BEVERAGE
+  SUPPLEMENT
+  SNACK
+  OTHER
+}
+
+enum InventoryLogType {
+  PURCHASE
+  CONSUMPTION
+  ADJUSTMENT
+  EXPIRED
+}
+
+enum ShoppingItemStatus {
+  PENDING
+  PURCHASED
+  CANCELLED
+}
+
 model UserProfile {
   id       String  @id @default(cuid())
   clerkId  String  @unique
@@ -31,9 +72,18 @@ model UserProfile {
   currency String @default("INR")
   timezone String @default("Asia/Kolkata")
 
+  // Finance
   transactions Transaction[]
   categories   TransactionCategory[]
   budgets      Budget[]
+
+  // Nutrition
+  foods Food[]
+  meals Meal[]
+
+  // Inventory
+  inventories   Inventory[]
+  shoppingItems ShoppingItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,4 +165,144 @@ model Transaction {
   @@index([userProfileId])
   @@index([categoryId])
   @@index([transactionDate])
+}
+
+model Food {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name String
+
+  category FoodCategory
+
+  defaultUnit Unit
+
+  calories Decimal @db.Decimal(10, 2)
+  protein  Decimal @db.Decimal(10, 2)
+  carbs    Decimal @db.Decimal(10, 2)
+  fat      Decimal @db.Decimal(10, 2)
+
+  price Decimal? @db.Decimal(10, 2)
+
+  mealFoods MealFood[]
+
+  inventory Inventory?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userProfileId, name])
+  @@index([userProfileId])
+}
+
+model Meal {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  mealType MealType
+
+  mealDate DateTime
+
+  notes String?
+
+  foods MealFood[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+  @@index([mealDate])
+}
+
+model MealFood {
+  id String @id @default(cuid())
+
+  mealId String
+  meal   Meal   @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  foodId String
+  food   Food   @relation(fields: [foodId], references: [id])
+
+  quantity Decimal @db.Decimal(10, 2)
+
+  unit Unit
+
+  calories Decimal @db.Decimal(10, 2)
+
+  protein Decimal @db.Decimal(10, 2)
+
+  carbs Decimal @db.Decimal(10, 2)
+
+  fat Decimal @db.Decimal(10, 2)
+
+  cost Decimal? @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+
+  @@index([mealId])
+  @@index([foodId])
+}
+
+model Inventory {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  foodId String @unique
+  food   Food   @relation(fields: [foodId], references: [id])
+
+  quantity Decimal @db.Decimal(10, 2)
+
+  minimumQuantity Decimal? @db.Decimal(10, 2)
+
+  preferredQuantity Decimal? @db.Decimal(10, 2)
+
+  logs InventoryLog[]
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
+}
+
+model InventoryLog {
+  id String @id @default(cuid())
+
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+
+  type InventoryLogType
+
+  quantity Decimal @db.Decimal(10, 2)
+
+  notes String?
+
+  createdAt DateTime @default(now())
+
+  @@index([inventoryId])
+}
+
+model ShoppingItem {
+  id String @id @default(cuid())
+
+  userProfileId String
+  userProfile   UserProfile @relation(fields: [userProfileId], references: [id], onDelete: Cascade)
+
+  name String
+
+  quantity Decimal? @db.Decimal(10, 2)
+
+  unit Unit?
+
+  status ShoppingItemStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  @@index([userProfileId])
 }
